@@ -1,0 +1,48 @@
+﻿FUNCTION_BLOCK "ioTest"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      iByte : Byte;
+      iWord : Int;
+   END_VAR
+
+   VAR_OUTPUT 
+      oByte : Byte;
+      oWord : Int;
+   END_VAR
+
+   VAR 
+      statCounter : USInt;
+      tonCycle {InstructionName := 'TON_TIME'; LibVersion := '1.0'} : TON_TIME;
+      statCycleOn { S7_SetPoint := 'True'} : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      tempTime : Time;
+   END_VAR
+
+
+BEGIN
+	IF #iWord > 0 THEN
+	    #tempTime := DINT_TO_TIME(REAL_TO_DINT(SCALE_X(VALUE := NORM_X(VALUE := #iWord, MIN := 0, MAX := 27648), MIN := 1, MAX := 1000)));
+	ELSIF #iWord < 0 THEN
+	    #tempTime := - DINT_TO_TIME(REAL_TO_DINT(SCALE_X(VALUE := NORM_X(VALUE := #iWord, MIN := 0, MAX := 27648), MIN := 1, MAX := 1000)));
+	ELSE
+	    #tempTime := T#500MS;
+	END_IF;
+	
+	#tonCycle(IN := NOT #statCycleOn,
+	          PT := #tempTime,
+	          Q => #statCycleOn);
+	
+	IF #iByte > 16#0 THEN
+	    #statCounter := 0;
+	    #oByte := #iByte;
+	ELSIF #statCycleOn THEN
+	    #statCounter := #statCounter + 1;
+	    #oByte := #statCounter;
+	END_IF;
+	
+	#oWord := #iWord;
+END_FUNCTION_BLOCK
+
